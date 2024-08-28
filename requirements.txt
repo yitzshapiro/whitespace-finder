@@ -2,3 +2,8 @@ ollama
 pytrends
 pandas
 matplotlib
+playwright
+playwright-stealth
+fake-useragent
+asyncio
+setuptools

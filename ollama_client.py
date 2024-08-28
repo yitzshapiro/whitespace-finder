@@ -1,8 +1,8 @@
 import ollama
 import json
 
-def generate_search_terms(prompt, model='mistral-nemo:latest'):
-    response = ollama.generate(model=model, prompt=prompt, format='json', options={'temperature': .6})
+def generate_search_terms(prompt, model='llama3.1:latest'):
+    response = ollama.generate(model=model, prompt=prompt, format='json', options={'temperature': .1})
     if response and 'response' in response:
         search_terms_json = json.loads(response['response'])
         print(search_terms_json)

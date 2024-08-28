@@ -1,9 +1,10 @@
 import logging
+import asyncio
 
 def handle_errors(func):
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         try:
-            return func(*args, **kwargs)
+            return await func(*args, **kwargs) if asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
         except Exception as e:
             logging.error(f"Error occurred: {str(e)}")
             return None
