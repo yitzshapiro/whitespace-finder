@@ -1,7 +1,12 @@
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="pytrends.request")
 from pytrends.request import TrendReq
 import matplotlib.pyplot as plt
 import logging
 import os
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import pandas as pd
 
 # Initialize logging for detailed output
 logging.basicConfig(level=logging.INFO)
@@ -10,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 def get_trend_data(search_term):
     pytrends = TrendReq(hl="en-US", tz=360)
     pytrends.build_payload(
-        [search_term], cat=0, timeframe="today 12-m", geo="", gprop=""
+        [search_term], cat=0, timeframe="today 3-m", geo="", gprop=""
     )
 
     trend_data = pytrends.interest_over_time()
@@ -19,7 +24,6 @@ def get_trend_data(search_term):
         return None
 
     return trend_data
-
 
 def update_combined_trend_data(trend_data, search_term, combined_trend_data):
     if trend_data is not None:
@@ -32,36 +36,35 @@ def update_combined_trend_data(trend_data, search_term, combined_trend_data):
 
 
 def plot_combined_trend_data(combined_trend_data):
-    if combined_trend_data is not None:
-        plt.figure(figsize=(14, 8))
-        for column in combined_trend_data.columns:
-            if column != "isPartial":  # Exclude 'isPartial' from the plot
-                plt.plot(
-                    combined_trend_data.index,
-                    combined_trend_data[column],
-                    marker="o",
-                    label=column,
-                )
+    if combined_trend_data is not None and not combined_trend_data.empty:
+        # Filter out the 'isPartial' column
+        trend_columns = [col for col in combined_trend_data.columns if col != 'isPartial']
+        
+        # Create a single plot with all trends
+        fig = go.Figure()
 
-        plt.title("Trend Over Time for All Search Terms")
-        plt.xlabel("Date")
-        plt.ylabel("Interest")
-        plt.grid(True)
+        for column in trend_columns:
+            fig.add_trace(
+                go.Scatter(x=combined_trend_data.index, y=combined_trend_data[column],
+                           mode='lines+markers', name=column)
+            )
 
-        plt.legend(
-            loc="center left",
-            bbox_to_anchor=(1, 0.5),
-            ncol=1,
-            fontsize="small",
-            frameon=False,
+        # Update layout
+        fig.update_layout(
+            height=600, 
+            width=1000,
+            title_text="Trend Over Time for All Search Terms",
+            xaxis_title="Date",
+            yaxis_title="Interest",
+            legend_title="Search Terms",
+            hovermode="x unified"
         )
-        plt.tight_layout(rect=[0, 0, 0.85, 1])
-
+        
+        # Save the plot as an interactive HTML file
         output_dir = "output"
         os.makedirs(output_dir, exist_ok=True)
-        plot_file = os.path.join(output_dir, "combined_trend_chart.png")
-        plt.savefig(plot_file)
-        plt.close()
-        logging.info("Combined trend chart saved.")
+        plot_file = os.path.join(output_dir, "combined_trend_chart.html")
+        fig.write_html(plot_file)
+        logging.info("Interactive combined trend chart saved as HTML.")
     else:
-        logging.info("Skipping collective chart generation due to lack of data.")
+        logging.info("Skipping chart generation due to lack of data.")
